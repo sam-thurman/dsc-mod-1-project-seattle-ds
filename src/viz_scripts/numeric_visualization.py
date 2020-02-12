@@ -29,7 +29,10 @@ def import_and_assign():
   oy_df_19_21 = pd.read_csv('oy_df_19_21.csv')
   oy_df_22_24 = pd.read_csv('oy_df_22_24.csv')
   age_df_dict = {'total_youth':[ay_df_16_18, ay_df_19_21, ay_df_22_24],'opportunity_youth':[oy_df_16_18, oy_df_19_21, oy_df_22_24]}
-  return full_dfs, racial_df, age_df_dict
+  
+  # for diploma working stats
+  oy_by_age_df = pd.read_csv('oy_by_age.csv')
+  return full_dfs, racial_df, age_df_dict, oy_by_age_df
 
 
 #       generate bar plot: number of opportunity youth in SKC in 2016 vs. 2020
@@ -110,3 +113,48 @@ def plot_racial_representation(racial_df):
   ax[1].set_ylabel('Percent of Representation in Opportunity Youth Pop.')
   ax[1].set_title('Who Makes Up OY in SKC')
   pass
+
+def rename_oy_by_age_df_columns(oy_by_age_df):
+  oy_by_age_df.columns = ['unnamed: 0', 
+                        'group', 
+                        '16_18_%', 
+                        '16_18_values', 
+                        '19_21_%', 
+                        '19_21_values', 
+                        '22_24_%', 
+                        '22_24_values', 
+                        'totals_%', 
+                        'totals_values']
+
+def add_values_to_top_of_bars(axis_obj, axis_index):
+  for p in axis_obj[axis_index].patches:
+      axis_obj[axis_index].annotate("%.2f" % p.get_height(), (p.get_x() + p.get_width() / 2., p.get_height()),
+          ha='center', va='center', fontsize=11, color='gray', xytext=(0, 20),
+          textcoords='offset points')
+
+def plot_working_diploma_status(oy_by_age_df):
+  #rename columns to be accessable
+  rename_oy_by_age_df_columns(oy_by_age_df)
+
+  # create subplot figure
+  fig, axs = plt.subplots(1,3,figsize=(18,6))
+
+  # plot 16-18 yr olds
+  sns.barplot(data = oy_by_age_df, x = 'group', y='16_18_values', ax = axs[0])
+  axs[0].set(ylabel='Pop. by Class for 16-18 yrs.', xlabel='Classification')
+  axs[0].set_xticklabels(oy_by_age_df['group'], rotation = 45)
+
+  # plot 19-21 yr olds
+  sns.barplot(data = oy_by_age_df, x = 'group', y='19_21_values', ax = axs[1])
+  axs[1].set(ylabel='Pop. by Class for 19-21 yrs.', xlabel='Classification')
+  axs[1].set_xticklabels(oy_by_age_df['group'], rotation = 45)
+
+  # plot 22-24 yr olds
+  sns.barplot(data = oy_by_age_df, x = 'group', y='22_24_values', ax = axs[2])
+  axs[2].set(ylabel='Pop. by Class for 22-24 yrs.', xlabel='Classification')
+  axs[2].set_xticklabels(oy_by_age_df['group'], rotation = 45)
+
+  # add pop. values to tops of bars
+  add_values_to_top_of_bars(axs, 0)
+  add_values_to_top_of_bars(axs, 1)
+  add_values_to_top_of_bars(axs, 2)
