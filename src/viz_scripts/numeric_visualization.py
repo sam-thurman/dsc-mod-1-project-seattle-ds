@@ -101,12 +101,12 @@ def add_values_to_top_of_bars(axis_obj, axis_index):
                                       ha='center', va='center', fontsize=11, color='gray', xytext=(0, 20),
                                       textcoords='offset points')
 
-    # <------------------------ PLOTS ------------------------>
+
+#                                     <------------------------ PLOTS ------------------------>
+
 
 #       generate bar plot:
 #         number of opportunity youth in SKC in 2016 vs. 2020
-
-
 def plot_16_v_20(full_dfs):
     num_oy_2016 = 18817
     plt.bar(['2016', '2020'], [num_oy_2016, full_dfs[1]['pwgtp'].sum()])
@@ -124,6 +124,17 @@ def plot_percent_oy_by_age(oy_percentage_of_age_pop, age_group_strings):
 
 
 #       generate bar plots:
+#         individual situation plots by age (used in plot_in_depth_age())
+def age_group_bar_plot(y, x, ax, age_palette, title):
+    sns.barplot(y=y, x=x, ax=ax, hue=x, palette=age_palette).set_title(
+        title, fontsize=15)
+    ax.get_xaxis().set_visible(False)
+    for patch in ax.patches:
+        patch.set_width(0.4)
+        patch.set_x(patch.get_x() * 0.8)
+
+
+#       generate bar plots:
 #         age stats for AY & OY aswell as percent of age group
 #         representated in OY population
 def plot_in_depth_age(age_df_dict):
@@ -137,32 +148,20 @@ def plot_in_depth_age(age_df_dict):
     axes[1].set_ylim(0, 35000)
     axes[2].set_ylim(0, 50)
 
-    sns.barplot(y=oy_age_group_val_list,
-                x=age_group_strings,
-                ax=axes[0], hue=age_group_strings, palette=age_palette).set_title('Number of Opportunity Youth by Age in South King County', fontsize=15)
-    axes[0].get_xaxis().set_visible(False)
-    sns.barplot(y=ay_age_group_val_list,
-                x=age_group_strings,
-                ax=axes[1], hue=age_group_strings, palette=age_palette).set_title('Number of Non-Opportunity Youth by Age in South King County', fontsize=15)
-    axes[1].get_xaxis().set_visible(False)
-    sns.barplot(y=oy_percentage_of_age_pop,
-                x=age_group_strings,
-                ax=axes[2], hue=age_group_strings, palette=age_palette).set_title('Opportunity Youth Percent of Pop. by Age', fontsize=15)
-    axes[2].set_ylabel('percent of total age group')
-    axes[2].get_xaxis().set_visible(False)
+    age_group_bar_plot(oy_age_group_val_list, age_group_strings,
+                       axes[0], age_palette, 'Number of Opportunity Youth by Age in South King County')
+    age_group_bar_plot(ay_age_group_val_list, age_group_strings,
+                       axes[1], age_palette, 'Number of Non-Opportunity Youth by Age in South King County')
+    age_group_bar_plot(oy_percentage_of_age_pop, age_group_strings,
+                       axes[2], age_palette, 'Opportunity Youth Percent of Pop. by Age')
 
-    for x in axes:
-        for patch in x.patches:
-            patch.set_width(0.4)
-            patch.set_x(patch.get_x() * 0.8)
     add_values_to_top_of_bars(axes, 0)
     add_values_to_top_of_bars(axes, 1)
     add_values_to_top_of_bars(axes, 2)
 
+
 #       generate bar plots:
 #         breakdown of AY % representation by race and breakdown of OY % representation by race
-
-
 def plot_racial_representation(racial_df):
     rename_race_df_columns(racial_df)
 
