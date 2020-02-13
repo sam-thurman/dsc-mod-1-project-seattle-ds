@@ -107,8 +107,6 @@ def add_values_to_top_of_bars(axis_obj, axis_index):
 
 #       generate bar plot:
 #         number of opportunity youth in SKC in 2016 vs. 2020
-
-
 def plot_16_v_20(full_dfs):
     num_oy_2016 = 18817
     plt.bar(['2016', '2020'], [num_oy_2016, full_dfs[1]['pwgtp'].sum()])
