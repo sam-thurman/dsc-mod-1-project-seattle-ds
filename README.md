@@ -1,133 +1,55 @@
-# South King County Opportunity Youth
+# Goal
 
-This project offers an updated estimate of the number of Opportunity Youth in South King County using the 2017 5-year American Community Survey [(ACS)](https://www.census.gov/programs-surveys/acs/about.html) Public Use Microdata Survey [(PUMS)](https://www.census.gov/programs-surveys/acs/technical-documentation/pums.html).
+The goal of this project was to follow up on the 2016 report of Opportunity Youth in Southern King County. Opportunity Youth are defined as people aging between 16-24 who are neither working, nor enrolled in school.
 
-## THIS REPOSITORY
+# Decyphering and Filtering the Data
 
-### Setup Instructions
+The first hurdle in this project was decyphering what on Earth we were looking at. After reviewing the documentation in the resources folder, it became apparent that we were looking at census data for Washington State. Knowing our objective was to analyze information concering Southern King County, we needed to discover how to filter our data to include only the rows pertaining to that region. But what is "Southern" King County, you might ask. The answer to that question came from the following url -
 
-If you are missing required software (e.g. Anaconda, PostgreSQL), please run the following command in Bash:
-```bash
-# installs necessary requirements
-# note: this may take anywhere from 10-20 minutes
-sh src/requirements/install.sh
-```
+https://www.kingcounty.gov/depts/health/data/community-health-indicators/definitions.aspx
 
-### `oy-env` conda Environment
+Upon discovering the definition of Southern King County, and after revieiwng the puma_names_2010 table, we were able to reduce our data to entries in the puma_2017 table where the PUMA column was between 11610 and 11615.
 
-This project relies on you using the [`environment.yml`](environment.yml) file to recreate the `oy-env` conda environment. To do so, please run the following commands *in your terminal*:
+Having filtered our data to the appropriate region, it was now time to find our youth.
 
-```bash
-# create the oy-env conda environment
-conda env create -f environment.yml
+# Finding and Categorizing our Youth
 
-# activate the oy-env conda environment
-conda activate oy-env
+The focus of the study is on youth between the ages of 16 and 24, so our first demographic filter was based on the 'agep' category, eliminating all entries outside of that range. The resulting data was saved as the ay_df dataframe for future calculations.
 
-# if needed, make oy-env available to you as a kernel in jupyter
-python -m ipykernel install --user --name oy-env --display-name "Python 3 (oy-env)"
-```
+After filtering based on age, we then needed to create a filter defining our Opportunity Youth category. To that end, we found 2 categories in the Data Dictionary that allowed us to perform this filtration: 'esr' for filtering based on employment status, and 'sch' for filtering based on educational enrollment status. We set the filter for 'esr' to NOT EQUAL to '4' or '1', thereby eliminating the youth who were working, while the filter for 'sch' was set EQUAL to '1', thereby including ONLY youth who had not attended school in the previous 3 months. 
 
-Note that this may take 10 or more minutes depending on internet speed.
+At this point, we had successfully broken our raw data into the All Youth dataframe (saved as ay_df) and the Opportunity Youth dataframe (oy_df).
 
-**Catalina Note:** You may need to modify the `prefix` at the very bottom of `environment.yml` if you are on macOS Catalina.  Run `conda env list` in your terminal to determine the appropriate path by looking at the paths of your existing conda environment(s).  Modify `environment.yml` then try running the installation commands listed above again.
+We also needed a unique category for youth who were working (so not opportunity youth), but who also hadn't acheived a high school education or GED equivalent. We ended up filtering based on those who WERE employed ('esr' EQUAL to '1' or '4'), and had NOT ACQUIRED a diploma or ged ('schl' BETWEEN '01' and '15'). We assumed this subcategory was intended to find youth who were at risk of becoming Opportunity Youth, and the dataframe was thus named Risk Youth (ry_df).
 
-### Data Download
+Now that we had all 3 categories of youth, we needed to perform our data analysis.
 
-To download the relevant data, run the following command *in Python*:
+# Data Analysis
 
-```
-data_collection.download_data_and_load_into_sql()
-```
+The study further divided youth based on age brackets 16-18, 19-21, and 22-24, thus we did the same, resulting in the df_START AGE_END AGE schema (e.g. ay_df_16_18 represents ALL youth from ages 16 to 18).
 
-Note that this may take 10 or more minutes depending on internet speed.
+After having subdivided our youth dataframes, we performed the necessary computations by summing the 'pwgtp' column in the relevant dataframes (which is an applied weight to that particular entry, so 1 entry with a 'pwgtp' of 45 essentially counts as 45 people). The Census data is distributed in this manner because it's easier to work with the data set and drastically reduces the file size of the dataset. So for example, calculating the percentage of  Opportunity Youth in the 16-18 age bracket, we would perform the following aciton: 
 
-There is an example notebook in the `notebooks/exploratory` directory with this code already added.
+sum(oy_df_16_18['pwgtp']) / sum(ay_df_16_18['pwgtp']). 
 
-## BACKGROUND
+This operation takes the total number of Opportunity Youth in the 16-18 category and divides it by the total number of All Youth in the 16-18 category, thereby giving us the ratio of OY to AY in a given subset of data.
 
-Measuring the successes and barriers faced by our most vulnerable youth is a challenge in the South King County region<sup>1</sup>. While there is a lot of information gathered from K12 districts and colleges about student outcomes, few data exists among Opportunity Youth (OY): young folks between the age 16 through 24 who are disengaged from both work and school<sup>2</sup>. This population is of particular interest to The Seattle Region Partnership (SRP), a multi-sector initiative founded by the Seattle Metropolitan Chamber of Commerce, Seattle Foundation, City of Seattle, and King County<sup>3</sup>.
+The final tables can be found in the Final jupyter notebook in the Notebooks/Report folder. These tables include analysis of each subcategory of Opportunity Youth by age bracket, education level, as well as race.
 
-## PROJECT GOAL
+Although race was not a required category for analysis, we found the results interesting.
 
-The SRP would like an update on the estimated number of OY in South King County. According to a recent The Seattle Times article, the number of OY in South King County has remained steadfast at 19,000<sup>4</sup>. However, that estimation comes from a report that is over three years old. As Data Science Consultants, your task is to inform the SRP on the current status of OY in South King County using updated data.
+# Findings
 
-## PROJECT REQUIREMENTS
+Although our data analysis produced slightly different values, we ultimately found the same patterns as the 2016 study.
 
-At minimum, the SRP is expecting the following:
+Namely, the percentage of Opportunity Youth increases as the population gets older (although with a slight drop from 19-21 to 22-24, presumably because of a lag in educational achievement and active employment). This pattern is to be expected because as age goes beyond 18, more youth are no longer in state mandated high school. 
 
-* A map that visualizes which parts of King County are a part of South King County;
+Additionaly, and more interestingly, there is a clear relationship between race and prevalence of Opportunity Youth within that demographic. For example, although white youth make up the majority of All Youth, there is only an 11% rate of Opportunity Youth within the white population. This is contrasted by the near 40% Opportunity Youth rate of the native american population. Although this is the most extreme example, this pattern repeats itself in other minority groups as well.
 
-* An update of the estimated number of OY in South King County. In addition the estimate, be sure to include a breakdown of the count of OY by Public Use Microdata Area (PUMA) within South King County;
-    + _Note: your supervisor is very interested in these statistics. After the third day of project week, they will be conducting a code review to verify your results before you share these statistics with the SRP._
+It should be noted as well, that even though Hispanic is listed as a race by the 2016 study, it is not in fact categorized as a race by the Census. This resulted in a 120% total when adding up the proporton of Opportunity Youth by race. This has been noted in our presentation. 
 
+# Further Research
 
-* An update of the table “Opportunity Youth Status by Age” located on page 2 of the 2016 report “Opportunity Youth in the Road Map Project Region”; and
+Our findings, while interesting, are limited by the definitions we chose when defining the various demographics of interest. It is quite possible the 2016 study used different data filters when determining how to perform their analysis, and since we don't have access to their definitions, our results remain inconclusive.
 
-* A visualization that highlights a trend between the 2016 report and current data.
-
-The SRP has asked that any extra time remaining be used to create the following items:
-
-* Create a choropleth map of the count of OY by PUMA within South King County;
-
-* For South King County, create a choropleth map that shows the percentage of jobs for workers age 29 or younger out of the total number of jobs per census block; and
-
-* Of the census blocks where jobs for workers age 29 or younger are the majority of employed people, what are a few of the industries that employ this group of people?
-
-* Utilize additional data sources to support your recommendations, e.g. [Census Bureau APIs](https://www.census.gov/data/developers/data-sets.html), [King County Open Data](https://data.kingcounty.gov/browse?limitTo=datasets&provenance=official), or [King County GIS Open Data](https://gis-kingcounty.opendata.arcgis.com/)
-
-## LEARNING GOALS
-The goal of this project is to showcase your newfound Python and PostgreSQL skills to generate analytical insights and communicate the high level takeaways to a non-technical audience. This project will emphasize the following learning goals:
-
-* Break down a question into small technical tasks;
-
-* Query data from a PostgreSQL database;
-
-* Produce descriptive statistics;
-
-* Visualize descriptive statistics; and
-
-* Tell a story from the descriptive statistics.
-
-## DELIVERABLES
-
-To complete this project, you will need to turn in the following deliverables:
-
-1. A public GitHub repository.
-2. An `environment.yml` file that contains all the necessary packages needed to recreate your conda environment.
-    - Start with the provided `environment.yml`, then as you install any additional packages be sure to [export](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#exporting-the-environment-yml-file) the new version and commit the changes in git.
-3. A standalone `src/` directory that stores all relevant source code.
-    - All functions have docstrings that act as [professional-quality documentation](http://google.github.io/styleguide/pyguide.html#381-docstrings).
-    - [Well documented](https://www.sqlstyle.guide/) SQL queries with appropriate single-line or multiline comments.
-4. A user-focused `README.md` file that explains your process, methodology and findings.
-    - Take the time to make sure that you craft your story well, and clearly explain your process and findings in a way that clearly shows both your technical expertise and your ability to communicate your results!
-5. A record of your workflow stored in `notebooks/exploratory`.  Don't be afraid to leave in error messages, so you know what didn't work!
-6. One final Jupyter Notebook file stored in `notebooks/report` that focuses on visualization and presentation.
-    - The very beginning of the notebook contains a description of the purpose of the notebook.
-       - This is helpful for your future self and anyone of your colleagues that needs to view your notebook. Without this context, you’re implicitly asking your peers to invest a lot of energy to help solve your problem. Help them by enabling them to jump into your project by providing them the purpose of this Jupyter Notebook.
-    - Explanation of the data sources and where one can retrieve them
-        - Whenever possible, link to the corresponding data dictionary
-    - Custom functions and classes are imported from Python modules and are not created directly in the notebook.  As soon as you have a working function in one of your exploratory notebooks, copy it over to `src` so it is reusable.
-7. A one-page memo stored in `reports/memo.md` written exclusively for a non-technical stakeholder.
-    - This memo should describe:
-       - A summary of the business problem you are trying to solve
-       - Key takeaways from your solution
-       - A section on next steps if you had more time (i.e. one additional week)
-8. An "Executive Summary" Keynote/PowerPoint/Google Slide presentation (delivered as a PDF export) that explains what you have found for the SRP.
-    - Make sure to also add and commit this file as presentation.pdf of your non-technical presentation to your repository with a file name of `reports/presentation.pdf`.
-    - Contain between 5-10 professional quality slides detailing:
-       - A high-level overview of your methodology
-       - The results you’ve uncovered
-       - Any real-world recommendations you would like to make based on your findings (ask yourself--why should the executive team care about what you found? How can your findings help the company/stakeholder?)
-       - Avoid technical jargon and explain results in a clear, actionable way for non-technical audiences.
-    - All visualizations included in this presentation should also be exported as image files (e.g. with `plt.savefig`, not by taking a screenshot) and saved under `reports/figures/`
-
-## Citations
-
-<sup>1</sup> Yohalem, N., Cooley, S. 2016. “Opportunity Youth in the Road Map Project Region”. Community Center for Education Results. Available at: https://bit.ly/2P2XRF3.
-
-<sup>2</sup> Anderson, T., Braga, B., Derrick-Mills, T., Dodkowitz, A., Peters, E., Runes, C., and Winkler, M. 2019. “New Insights into the Back on Track Model’s Effects on Opportunity Youth Outcomes”. Urban Institute. Available at: https://bit.ly/2BuCLr1.
-
-<sup>3</sup> Seattle Region Partnership. 2016. “King County Opportunity Youth Overview: Demographics of opportunity youth and systemic barriers to employment”. Available at: https://bit.ly/2oRGz37.
-
-<sup>4</sup> Morton, N. 2019. “Nearly 19,000 youth in King County are neither working nor in school. How one Seattle nonprofit is changing that.” The Seattle Times. Available at: https://bit.ly/2W5EufR.
+It would be interesting to go back and perform the same analysis based on the same filters used in the 2016 study.
