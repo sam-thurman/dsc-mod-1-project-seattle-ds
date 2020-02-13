@@ -34,7 +34,9 @@ def import_and_assign():
     # for diploma/working stats
     oy_by_age_df = pd.read_csv('oy_by_age.csv')
     oy_by_education = pd.read_csv('oy_by_education.csv')
-    return full_dfs, racial_df, age_df_dict, oy_by_age_df, oy_by_education
+    oy_by_education_2016 = pd.read_csv('oy_by_education_2016.csv')
+
+    return full_dfs, racial_df, age_df_dict, oy_by_age_df, oy_by_education, oy_by_education_2016
 
 
 #       group ay_df and oy_df by age groups, return list of OY percent
@@ -67,7 +69,7 @@ def resize_and_overlap_bars(axis):
     for patch in axis.patches:
         new_value = 0.8
         current_width = patch.get_width()
-        diff = current_width - new_value
+        # diff = current_width - new_value
 
         #  change the bar width
         patch.set_width(new_value)
@@ -230,6 +232,41 @@ def plot_working_diploma_status(oy_by_age_df):
 
 #       generate plot:
 #         plot breakdown of education levels within opportunity youth in SKC
+def plot_oy_education_breakdown_2016(oy_by_education_2016):
+    rename_oy_by_age_df_columns(oy_by_education_2016)
+    fig, ax = plt.subplots(1, 3, figsize=(20, 6))
+
+    education_palette = {'No Diploma': '#FF7764',
+                         'HS or GED': '#ADD3FF',
+                         'Some College, No Degree': '#C27AEB',
+                         'College Degree (associates+)': '#EBCB8A'}
+
+    sns.barplot(data=oy_by_education_2016[1:], x='group', y='16_18_values',
+                hue='group', ax=ax[0], palette=education_palette)
+    sns.barplot(data=oy_by_education_2016[1:], x='group', y='19_21_values',
+                hue='group', ax=ax[1], palette=education_palette)
+    sns.barplot(data=oy_by_education_2016[1:], x='group', y='22_24_values',
+                hue='group', ax=ax[2], palette=education_palette)
+    ax[0].set_ylim(0, 4000)
+    ax[1].set_ylim(0, 4000)
+    ax[2].set_ylim(0, 4000)
+    ax[0].get_xaxis().set_visible(False)
+    ax[1].get_xaxis().set_visible(False)
+    ax[2].get_xaxis().set_visible(False)
+    for x in ax:
+        for patch in x.patches:
+            patch.set_width(0.4)
+            patch.set_x(patch.get_x() * 0.8)
+
+    add_values_to_top_of_bars(ax, 0)
+    add_values_to_top_of_bars(ax, 1)
+    add_values_to_top_of_bars(ax, 2)
+    pass
+
+#       generate plot:
+#         plot breakdown of education levels within opportunity youth in SKC in 2020
+
+
 def plot_oy_education_breakdown_2020(oy_by_education):
     rename_oy_by_age_df_columns(oy_by_education)
     fig, ax = plt.subplots(1, 3, figsize=(20, 6))
@@ -245,9 +282,9 @@ def plot_oy_education_breakdown_2020(oy_by_education):
                 hue='group', ax=ax[1], palette=education_palette)
     sns.barplot(data=oy_by_education[1:], x='group', y='22_24_values',
                 hue='group', ax=ax[2], palette=education_palette)
-    ax[0].set_ylim(0, 3000)
-    ax[1].set_ylim(0, 3000)
-    ax[2].set_ylim(0, 3000)
+    ax[0].set_ylim(0, 4000)
+    ax[1].set_ylim(0, 4000)
+    ax[2].set_ylim(0, 4000)
     ax[0].get_xaxis().set_visible(False)
     ax[1].get_xaxis().set_visible(False)
     ax[2].get_xaxis().set_visible(False)
