@@ -329,6 +329,7 @@ def plot_oy_by_puma(oy_by_puma):
     ax.get_xaxis().set_visible(False)
     # move legend off plot
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.savefig('by_location')
     pass
 
 
