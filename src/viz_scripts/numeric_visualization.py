@@ -1,4 +1,5 @@
 # importing packages
+from src.analysis import *
 
 import pandas as pd
 import numpy as np
@@ -36,11 +37,22 @@ def import_and_assign():
     oy_by_education = pd.read_csv('oy_by_education.csv')
     oy_by_education_2016 = pd.read_csv('oy_by_education_2016.csv')
 
-    return full_dfs, racial_df, age_df_dict, oy_by_age_df, oy_by_education, oy_by_education_2016
+    # df of OY pop. by PUMA district
+    oy_by_puma = pd.read_csv('oy_by_puma.csv')
 
+    df_master_dict = {'full_dfs': full_dfs,
+                      'racial_df': racial_df,
+                      'age_df_dict': age_df_dict,
+                      'oy_by_age_df': oy_by_age_df,
+                      'oy_by_education': oy_by_education,
+                      'oy_by_education_2016': oy_by_education_2016,
+                      'oy_by_puma': oy_by_puma}
+    return df_master_dict
 
 #       group ay_df and oy_df by age groups, return list of OY percent
 #       representation in each age group and list of age group strings
+
+
 def get_age_plot_reqs(age_df_dict):
     age_group_strings = ['16-18', '19-21', '22-24']
     ay_age_group_val_list = [age_df_dict['total_youth'][0]['pwgtp'].sum(),
@@ -101,12 +113,12 @@ def add_values_to_top_of_bars(axis_obj, axis_index):
                                       ha='center', va='center', fontsize=11, color='gray', xytext=(0, 20),
                                       textcoords='offset points')
 
-    # <------------------------ PLOTS ------------------------>
+
+#                                     <------------------------ PLOTS ------------------------>
+
 
 #       generate bar plot:
 #         number of opportunity youth in SKC in 2016 vs. 2020
-
-
 def plot_16_v_20(full_dfs):
     num_oy_2016 = 18817
     plt.bar(['2016', '2020'], [num_oy_2016, full_dfs[1]['pwgtp'].sum()])
@@ -116,11 +128,23 @@ def plot_16_v_20(full_dfs):
 #       generate bar plot:
 #         percent of age group representated in OY population
 def plot_percent_oy_by_age(oy_percentage_of_age_pop, age_group_strings):
-    plt.ylim(0, 50)
-    plt.bar(age_group_strings, oy_percentage_of_age_pop)
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    ax.set_ylim(0, 50)
+    sns.barplot(x=age_group_strings, y=oy_percentage_of_age_pop, orient="v")
     plt.title('Opportunity Youth {%} representation in each age group')
     plt.xlabel('Age Group')
     plt.ylabel('Percent of Age Group')
+
+
+#       generate bar plots:
+#         individual situation plots by age (used in plot_in_depth_age())
+def age_group_bar_plot(y, x, ax, age_palette, title):
+    sns.barplot(y=y, x=x, ax=ax, hue=x, palette=age_palette).set_title(
+        title, fontsize=15)
+    ax.get_xaxis().set_visible(False)
+    for patch in ax.patches:
+        patch.set_width(0.4)
+        patch.set_x(patch.get_x() * 0.8)
 
 
 #       generate bar plots:
@@ -131,38 +155,26 @@ def plot_in_depth_age(age_df_dict):
         age_df_dict)
     sns.set_style("darkgrid")
     age_palette = {'16-18': '#FF337A', '19-21': '#6F5EEB', '22-24': '#6EFFF4'}
-    fig, axes = plt.subplots(1, 3, figsize=(20, 6))
+    fig, axes = plt.subplots(3, 1, figsize=(6, 18))
 
     axes[0].set_ylim(0, 35000)
     axes[1].set_ylim(0, 35000)
     axes[2].set_ylim(0, 50)
 
-    sns.barplot(y=oy_age_group_val_list,
-                x=age_group_strings,
-                ax=axes[0], hue=age_group_strings, palette=age_palette).set_title('Number of Opportunity Youth by Age in South King County', fontsize=15)
-    axes[0].get_xaxis().set_visible(False)
-    sns.barplot(y=ay_age_group_val_list,
-                x=age_group_strings,
-                ax=axes[1], hue=age_group_strings, palette=age_palette).set_title('Number of Non-Opportunity Youth by Age in South King County', fontsize=15)
-    axes[1].get_xaxis().set_visible(False)
-    sns.barplot(y=oy_percentage_of_age_pop,
-                x=age_group_strings,
-                ax=axes[2], hue=age_group_strings, palette=age_palette).set_title('Opportunity Youth Percent of Pop. by Age', fontsize=15)
-    axes[2].set_ylabel('percent of total age group')
-    axes[2].get_xaxis().set_visible(False)
+    age_group_bar_plot(oy_age_group_val_list, age_group_strings,
+                       axes[0], age_palette, 'Number of Opportunity Youth by Age in South King County')
+    age_group_bar_plot(ay_age_group_val_list, age_group_strings,
+                       axes[1], age_palette, 'Number of Non-Opportunity Youth by Age in South King County')
+    age_group_bar_plot(oy_percentage_of_age_pop, age_group_strings,
+                       axes[2], age_palette, 'Opportunity Youth Percent of Pop. by Age')
 
-    for x in axes:
-        for patch in x.patches:
-            patch.set_width(0.4)
-            patch.set_x(patch.get_x() * 0.8)
     add_values_to_top_of_bars(axes, 0)
     add_values_to_top_of_bars(axes, 1)
     add_values_to_top_of_bars(axes, 2)
 
+
 #       generate bar plots:
 #         breakdown of AY % representation by race and breakdown of OY % representation by race
-
-
 def plot_racial_representation(racial_df):
     rename_race_df_columns(racial_df)
 
@@ -199,7 +211,7 @@ def plot_working_diploma_status(oy_by_age_df):
                          'Working Without Diploma': '#8B4DFF', 'Not an Opportunity Youth': '#3AE1E8'}
 
     # create subplot figure
-    fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+    fig, axs = plt.subplots(3, 1, figsize=(6, 18))
 
     # plot 16-18 yr olds
     sns.barplot(data=oy_by_age_df, x='group', y='16_18_values',
@@ -224,6 +236,9 @@ def plot_working_diploma_status(oy_by_age_df):
             patch.set_width(0.4)
             patch.set_x(patch.get_x() * 0.8)
 
+    axs[0].legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    axs[1].legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    axs[2].legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     # add pop. values to tops of bars
     add_values_to_top_of_bars(axs, 0)
     add_values_to_top_of_bars(axs, 1)
@@ -297,3 +312,45 @@ def plot_oy_education_breakdown_2020(oy_by_education):
     add_values_to_top_of_bars(ax, 1)
     add_values_to_top_of_bars(ax, 2)
     pass
+
+
+#       generate bar plot:
+#           population of OY in each PUMA district
+def plot_oy_by_puma(oy_by_puma):
+    puma_names, puma_palette = get_puma_names_and_palette(oy_by_puma)
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    sns.barplot(data=oy_by_puma, x=puma_names,
+                y='count', ax=ax, hue=puma_names, palette=puma_palette)
+
+    for p in ax.patches:
+        ax.annotate("%.2f" % p.get_height(), (p.get_x() + p.get_width() / 2., p.get_height()),
+                    ha='center', va='center', fontsize=11, color='gray', xytext=(0, 20),
+                    textcoords='offset points')
+    ax.get_xaxis().set_visible(False)
+    # move legend off plot
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    plt.savefig('by_location')
+    pass
+
+
+#       retrieve and clean up pumas names and assign to color palette
+def get_puma_names_and_palette(oy_by_puma):
+    colors = ['#FF292B', '#FF3885', '#2527E8', '#36FFBD', '#D5E825', '#FF9629']
+    # puma_palette = {11610: colors[0], 11611: colors[1], 11612: colors[2],
+    #                 11613: colors[3], 11614: colors[4], 11615: colors[5]}
+    puma_palette = {}
+    puma_names = []
+    counter = 0
+
+    for puma in oy_by_puma['puma']:
+        puma_name = str(pd.read_sql(f"""
+        select puma_name
+        from puma_names_2010
+        where puma='{puma}'
+        """, conn))
+        puma_name = puma_name.replace(
+            '                                           puma_name\n0  ', '')
+        puma_names.append(puma_name)
+        puma_palette[f'{puma_name}'] = colors[counter]
+        counter += 1
+    return puma_names, puma_palette
